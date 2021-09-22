@@ -28,7 +28,7 @@ jobs:
     - name: Docker build
       run: docker build -t maxdb.azurecr.io/${TEST_NAME} ${TEST_ROOT}/${TEST_NAME}
     - name: Docker push
-      run: docker push ballerina/${TEST_NAME}
+      run: docker push maxdb.azurecr.io/${TEST_NAME}
     - name: Configure AKS
       uses: azure/aks-set-context@v1
       with:
