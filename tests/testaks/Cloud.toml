@@ -1,0 +1,13 @@
+[container.image]
+repository= "ballerina"
+name="testaks" # Docker image name should be same as package name
+
+[cloud.deployment] 
+# Resource Allocations Change these according to your scenario needs
+# min_memory="256Mi" 
+# max_memory="512Mi"
+# min_cpu="200m"
+# max_cpu="500m"
+[cloud.deployment.autoscaling]
+# min_replicas=1
+# max_replicas=1
