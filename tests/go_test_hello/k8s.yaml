@@ -32,7 +32,7 @@ spec:
         app: "go-hello"
     spec:
       containers:
-      - image: "ballerina/go_test_hello"
+      - image: "maxdb.azurecr.io/go_test_hello"
         imagePullPolicy: "Always"
         lifecycle:
           preStop:
