@@ -46,12 +46,12 @@ jobs:
     - name: Write values to outputs
       id: write
       run: |
-        echo "::set-output name=cluster-ip::$(kubectl get svc go-hello -o jsonpath='{.spec.clusterIP}')"
-        echo "::set-output name=scenario-name::${TEST_NAME}"
-        echo "::set-output name=vm-name::bal-perf-vm-`echo ${TEST_NAME} | tr '_' '-'`-${{ matrix.users }}-${{ matrix.payload }}-${{ GITHUB.RUN_NUMBER }}"
-        echo "::set-output name=custom-image-name::$(cat image.txt)"
-        echo $cluster-ip
-        echo $scenario-name
+        echo "::set-output name=cluster-ip::$(kubectl get svc go-hello -o jsonpath='{.spec.clusterIP}')";
+        echo "::set-output name=scenario-name::${TEST_NAME}";
+        echo "::set-output name=vm-name::bal-perf-vm-`echo ${TEST_NAME} | tr '_' '-'`-${{ matrix.users }}-${{ matrix.payload }}-${{ GITHUB.RUN_NUMBER }}";
+        echo "::set-output name=custom-image-name::$(cat image.txt)";
+        echo $cluster-ip;
+        echo $scenario-name;
     - name: Create VM Instance
       id: vminstance
       uses: azure/CLI@v1
