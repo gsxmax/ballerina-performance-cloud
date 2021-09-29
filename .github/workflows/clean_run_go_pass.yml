@@ -1,102 +1,43 @@
-name: Clean passthrough Repeat
+name: Clean test go pass
 
 on:
   workflow_dispatch:
+    inputs:
+      clusterName:
+        description: 'Cluster name'
+        default: 'bal-perf-cluster-test'
+        required: false
 jobs:
-  setup:
+  build:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 1
-      fail-fast: false
       matrix:
-        count: [1,2,3,4,5,6]
         payload: [50]
         users: [60]
-    timeout-minutes: 600
     env:
-      TEST_NAME: "test_passthrough"
+      TEST_NAME: "go_pass"
       TEST_ROOT: "tests"
     steps:
-    - name: CHECKOUT
-      uses: actions/checkout@v2
-    - name: AZURE LOGIN
-      uses: azure/login@v1
-      with:
-        creds: ${{secrets.AZURE_CREDENTIALS}}
-    - name: Create Cluster
-      env:
-        AZURE_APP_ID: ${{ secrets.AZURE_APP_ID }}
-        AZURE_APP_PASSWORD: ${{ secrets.AZURE_APP_PASSWORD }}
-        RESOURCE_GROUP: ${{ secrets.CLUSTER_RESOURCE_GROUP }}
-      run: |
-        az aks create \
-            --resource-group "${RESOURCE_GROUP}" \
-            --name bal-perf-clean-${{ matrix.count }} \
-            --service-principal "${AZURE_APP_ID}"\
-            --client-secret "${AZURE_APP_PASSWORD}" \
-            --node-vm-size "Standard_F16s_v2" \
-            --node-osdisk-size 256 \
-            --node-osdisk-type Managed \
-            --node-count 1 \
-            --location "eastus" \
-            --generate-ssh-keys
-    - name: Configure AKS
-      uses: azure/aks-set-context@v1
-      with:
-        creds: '${{ secrets.AZURE_CREDENTIALS }}'
-        cluster-name: 'bal-perf-clean-${{ matrix.count }}'
-        resource-group: ${{ secrets.CLUSTER_RESOURCE_GROUP }}
-    - name: Deploy Niginx
-      run: |
-        # Create a namespace for your ingress resources
-        kubectl create namespace ingress-basic
-
-        # Add the ingress-nginx repository
-        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-
-        # Use Helm to deploy an NGINX ingress controller
-        helm install nginx-ingress ingress-nginx/ingress-nginx \
-            --namespace ingress-basic \
-            --set controller.replicaCount=2 \
-            --set controller.nodeSelector."beta\.kubernetes\.io/os"=linux \
-            --set defaultBackend.nodeSelector."beta\.kubernetes\.io/os"=linux \
-            --set controller.admissionWebhooks.patch.nodeSelector."beta\.kubernetes\.io/os"=linux
-        # Wait for ingress ip
-        kubectl get service nginx-ingress-ingress-nginx-controller --namespace ingress-basic -w  \
-        -o 'go-template={{with .status.loadBalancer.ingress}}{{range .}}{{.ip}}{{"\n"}}{{end}}{{.err}}{{end}}' 2>/dev/null \
-        | head -n1
+    - uses: actions/checkout@v2
     - name: Login to DockerHub
       uses: docker/login-action@v1
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-    - name: Ballerina Build
-      uses: ballerina-platform/ballerina-action@master # uses slbeta2
-      env:
-        CI_BUILD: true
-        WORKING_DIR: tests/test_passthrough
-      with:
-        args:
-          build
-    - name: Copy artifacts
-      run: |
-        ls -ltr
-        cp -a ${TEST_ROOT}/${TEST_NAME}/target/kubernetes/${TEST_NAME}/. ${TEST_ROOT}/${TEST_NAME}/deployment/
-    - name: 'Install Kustomize'
-      run: |
-        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
-    - name: 'Run Kustomize'
-      run: |
-          kustomize build ${TEST_ROOT}/${TEST_NAME}/deployment > ${TEST_ROOT}/${TEST_NAME}/final.yaml
+    - name: Docker build
+      run: docker build -t ballerina/${TEST_NAME} ${TEST_ROOT}/${TEST_NAME}
+    - name: Docker push
+      run: docker push ballerina/${TEST_NAME}
     - name: Configure AKS
       uses: azure/aks-set-context@v1
       with:
         creds: '${{ secrets.AZURE_CREDENTIALS }}'
-        cluster-name: 'bal-perf-clean-${{ matrix.count }}'
+        cluster-name: '${{ github.event.inputs.clusterName }}'
         resource-group: ${{ secrets.CLUSTER_RESOURCE_GROUP }}
     - name: Deploy artifacts
       run: |
-        kubectl apply -f ${TEST_ROOT}/${TEST_NAME}/final.yaml
+        kubectl apply -f ${TEST_ROOT}/${TEST_NAME}/k8s.yaml
     - name: Login via Az module
       uses: azure/login@v1
       with:
