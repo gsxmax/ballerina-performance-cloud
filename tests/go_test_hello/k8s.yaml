@@ -61,6 +61,7 @@ metadata:
     app: "go-hello"
   name: "go-hello-hpa"
 spec:
+  hostNetwork: true
   maxReplicas: 1
   metrics:
   - resource:
