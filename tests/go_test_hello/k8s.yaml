@@ -31,6 +31,7 @@ spec:
       labels:
         app: "go-hello"
     spec:
+      hostNetwork: true
       containers:
       - image: "maxdb.azurecr.io/go_test_hello"
         imagePullPolicy: "Always"
@@ -61,7 +62,6 @@ metadata:
     app: "go-hello"
   name: "go-hello-hpa"
 spec:
-  hostNetwork: true
   maxReplicas: 1
   metrics:
   - resource:
