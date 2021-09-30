@@ -108,6 +108,16 @@ spec:
       labels:
         app: go-backend
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - go-pass
+            topologyKey: "kubernetes.io/hostname"
       containers:
       - name: go-container
         image: xlight05/go-backend:latest
